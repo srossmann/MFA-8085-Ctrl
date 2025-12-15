@@ -117,3 +117,11 @@
 #define SDCARD_CS_PIN 53
 
 void driveBusControl();
+void releaseBusControl();
+void writeMem(uint16_t addr, uint8_t dt);
+
+uint8_t readMem(uint16_t addr);
+void writeIO(uint16_t addr, uint8_t dt);
+uint8_t readIO(uint16_t addr);
+void writeROM();
+ 
