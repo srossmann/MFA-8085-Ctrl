@@ -22,6 +22,19 @@ typedef struct command_t {
   uint8_t subCount;
 } command_t;
 
+
+long parseNumber(const char* s) {
+  // erkennt: 0xFF, FF, 123
+  if (strstr(s, "0x") == s || strstr(s, "0X") == s)
+    return strtol(s, NULL, 16);
+
+  // enthält nur Hex-Zeichen?
+  for (uint8_t i = 0; s[i]; i++) {
+    if (!isxdigit(s[i])) return atol(s);
+  }
+  return strtol(s, NULL, 16);
+}
+
 /* ---------------- Command Handler ---------------- */
 
 /******************************************/
@@ -120,16 +133,140 @@ void cmd_DUMP(int argc, char *argv[]) {
 /******************************************/
 /*  CMD UNMOUNT                           */
 /******************************************/
-void cmd_MEM(int argc, char *argv[]) {
+void cmd_RESET(int argc, char *argv[]) {
+   
+  cpuReset();
+}
+
+/******************************************/
+/*  CMD UNMOUNT                           */
+/******************************************/
+void cmd_MEM_DUMP(int argc, char *argv[]) {
    
   if (argc < 2) {
     Serial.println("MEM <adresse"); 
     return;
   }
 
-  int value = atoi(argv[1]);
-  Memorydump(value);
+  int adresse = 0;
+  adresse = parseNumber(argv[2]);
+
+  Memorydump(adresse);
 }
+
+/******************************************/
+/*  CMD UNMOUNT                           */
+/******************************************/
+void cmd_MEM_WRITE(int argc, char *argv[]) {
+   
+  if (argc < 3) {
+    Serial.println("MEM <adresse"); 
+    return;
+  }
+
+  long adresse = parseNumber(argv[2]);
+  long wert = parseNumber(argv[3]);
+
+  writeMemory(adresse, wert);
+
+  for (long i = adresse; i < (adresse + 255); i++)
+  {
+    writeMemory(i, wert);
+  }
+  
+
+}
+
+/******************************************/
+/*  CMD UNMOUNT                           */
+/******************************************/
+void cmd_HALT(int argc, char *argv[]) {
+   cpuHalt();
+  
+}
+
+/******************************************/
+/*  CMD UNMOUNT                           */
+/******************************************/
+void cmd_RUN(int argc, char *argv[]) {
+   cpuRun();
+   
+}
+
+/******************************************/
+/*  CMD UNMOUNT                           */
+/******************************************/
+void cmd_IO_GET(int argc, char *argv[]) {
+  if (argc < 3) {
+    Serial.println("MEM <adresse"); 
+    return;
+  }
+   
+}
+
+/******************************************/
+/*  CMD UNMOUNT                           */
+/******************************************/
+void cmd_IO_SET(int argc, char *argv[]) {
+   if (argc < 3) {
+    Serial.println("MEM <adresse"); 
+    return;
+  }
+   
+}
+
+/* ---------------- Sub Command     ---------------- */
+const command_t cfgCommands[] = {
+  { "SET","<wert> ", cmd_cfg_set, NULL, 0 },
+  { "GET", "<wert> rückgabe ",cmd_cfg_get, NULL, 0 },
+};
+
+const command_t cfgSubCommands[] = {
+  { "PARM1","<wert> ", cmd_cfg_set, NULL, 0 },
+  { "PARM2", "<wert> rückgabe ",cmd_cfg_get, NULL, 0 },
+};
+
+const command_t memSubCommands[] = {
+  { "DUMP","<adresse> ", cmd_MEM_DUMP, NULL, 0 },
+  { "WRITE", "<adresse> <wert> rückgabe ",cmd_MEM_WRITE, NULL, 0 },
+};
+
+const command_t sdcardCommands[] = {
+  { "OPEN","open ", cmd_mount, NULL, 0 },
+  { "CLOSE", "close ", cmd_unmount,  NULL, 0 },
+};
+
+const command_t cpuSubCommands[] = {
+  { "RESET","Reset 8085 ", cmd_RESET, NULL, 0 },
+  { "HALT","Halt 8085 ", cmd_HALT, NULL, 0 }, 
+  { "RUN","Run 8085 ", cmd_RUN, NULL, 0 }, 
+};
+
+const command_t ioSubCommands[] = {
+  { "GET","Reset 8085 ", cmd_IO_GET, NULL, 0 },
+  { "SET","Halt 8085 ", cmd_IO_SET, NULL, 0 }, 
+   
+};
+/* ---------------- Root Command   ---------------- */
+const command_t rootCommands[] = {
+  { "HELP", "Gibt eine Hilfe-Liste aus ", cmd_help, NULL, 0 },
+  { "SD", "Speicherkarte ", NULL, sdcardCommands, 2 },
+  { "DIR", "File liste  ", cmd_DIR, NULL, 0 },
+  { "CD", "Path wechseln ", cmd_CD, NULL, 0 },
+  { "MKDIR", "Dir erstellen ", cmd_MKDIR, NULL, 0 },
+  { "DUMP", "File anzeigen ", cmd_DUMP, NULL, 0 },
+  { "MEM", "File anzeigen ", NULL, memSubCommands, 2 },
+  { "IO", "File anzeigen ", NULL, ioSubCommands, 2 },
+  { "CPU", "8085 ", NULL, cpuSubCommands, 3 },
+
+
+
+
+  { "CFG", "Konfiguration ",  NULL, cfgCommands,   2 },
+};
+
+
+
 /******************************************/
 /*  CMD UNMOUNT                           */
 /******************************************/
@@ -138,12 +275,15 @@ void printHelp(
   uint8_t tableSize,
   uint8_t indent
 ) {
+  
+ 
   for (uint8_t i = 0; i < tableSize; i++) {
     for (uint8_t j = 0; j < indent; j++) {
       Serial.print("  ");
     }
     Serial.print(table[i].name);
-    Serial.print(" ");
+
+    Serial.print("\t\t");
     Serial.println(table[i].pname);
 
     if (table[i].sub != NULL) {
@@ -151,41 +291,6 @@ void printHelp(
     }
   }
 }
-
-/* ---------------- Sub Command     ---------------- */
-const command_t cfgCommands[] = {
-  { "SET","\t\t <wert> ", cmd_cfg_set, NULL, 0 },
-  { "GET", "\t\t <wert> rückgabe ",cmd_cfg_get, NULL, 0 },
-};
-
-const command_t cfgSubCommands[] = {
-  { "PARM1","\t\t <wert> ", cmd_cfg_set, NULL, 0 },
-  { "PARM2", "\t\t <wert> rückgabe ",cmd_cfg_get, NULL, 0 },
-};
-
-const command_t sdcardCommands[] = {
-  { "OPEN","\t\t open ", cmd_mount, NULL, 0 },
-  { "CLOSE", "\t\t close ", cmd_unmount,  NULL, 0 },
-};
-
-/* ---------------- Root Command   ---------------- */
-const command_t rootCommands[] = {
-  { "HELP", " \t\t Gibt eine Hilfe-Liste aus ", cmd_help, NULL, 0 },
-  { "SD", "\t\t Speicherkarte ", NULL, sdcardCommands, 2 },
-  { "DIR", "\t\t File liste  ", cmd_DIR, NULL, 0 },
-  { "CD", " \t\t Path wechseln ", cmd_CD, NULL, 0 },
-  { "MKDIR", "\t\t Dir erstellen ", cmd_MKDIR, NULL, 0 },
-  { "DUMP", "\t\t File anzeigen ", cmd_DUMP, NULL, 0 },
-  { "MEM", "\t\t File anzeigen ", cmd_MEM, NULL, 0 },
-
-
-
-
-  { "CFG", "\t\t Konfiguration ",  NULL, cfgCommands,   2 },
-};
-
-
-
 
 void cmd_help(int argc, char *argv[]) {
 
@@ -214,6 +319,7 @@ void cmd_help(int argc, char *argv[]) {
 
         if (table[i].sub != NULL) {
           table = table[i].sub;
+          
           tableSize = table[i].subCount;
           found = true;
           break;
@@ -267,7 +373,7 @@ void dispatch(
       // End-Command → Handler ausführen
       if (table[i].func != NULL) {
         table[i].func(argc, argv);
-        Serial.print(">");
+        //Serial.print(">");
         return;
       }
     }
@@ -275,7 +381,7 @@ void dispatch(
 
   Serial.print("Unbekannter Befehl: ");
   Serial.println(argv[level]);
-  Serial.print(">");
+ // Serial.print(">");
 }
 
 
@@ -307,6 +413,7 @@ void readSerial() {
       Serial.println("");
       processLine(cmdBuffer);
       cmdIndex = 0;
+      Serial.print(">");
     }
     else if (c != '\r' && cmdIndex < CMD_BUFFER_SIZE - 1) {
       cmdBuffer[cmdIndex++] = c;

@@ -15,11 +15,20 @@
 /********************************************/
 /*                                          */
 /********************************************/
-#define set_WR(sv) bitWrite(PORTG, PG0, sv)
-#define drive_WR() \
-  set_WR(1);       \
+#define set_RESET(sv) bitWrite(PORTJ, PJ0, sv)
+#define drive_RESET() \
+  set_RESET(1);       \
+  bitWrite(DDRJ, PJ0, 1)
+#define release_RESET() bitWrite(DDRJ, PJ0, 0)
+
+/********************************************/
+/*                                          */
+/********************************************/
+#define set_MEMR(sv) bitWrite(PORTG, PG0, sv)
+#define drive_MEMR() \
+  set_MEMR(1);       \
   bitWrite(DDRG, PG0, 1)
-#define release_WR() bitWrite(DDRG, PG0, 0)
+#define release_MEMR() bitWrite(DDRG, PG0, 0)
 
 /********************************************/
 /*                                          */
@@ -33,11 +42,12 @@
 /********************************************/
 /*                                          */
 /********************************************/
-#define set_MREQ(sv) bitWrite(PORTG, PG2, sv)
-#define drive_MREQ() \
-  set_MREQ(1);       \
+#define set_WR(sv) bitWrite(PORTG, PG2, sv)
+#define drive_WR() \
+  set_WR(1);       \
   bitWrite(DDRG, PG2, 1)
-#define release_MREQ() bitWrite(DDRG, PG2, 0)
+#define release_WR() bitWrite(DDRG, PG2, 0)
+
 
 /********************************************/
 /*                                          */
@@ -119,6 +129,9 @@
 void driveBusControl();
 void releaseBusControl();
 void writeMem(uint16_t addr, uint8_t dt);
+void SetReset();
+void ResetReset();
+
 
 uint8_t readMem(uint16_t addr);
 void writeIO(uint16_t addr, uint8_t dt);

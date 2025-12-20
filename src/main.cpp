@@ -65,12 +65,12 @@ void setup()
     ; // wait for serial port to connect. Needed for native USB port only
   Serial.println("");
   Serial.println("");
-  Serial.println(F("*********************************"));
-  Serial.println(F("*** MFA-Computer 8085 Control ***"));
-  Serial.println(F("*** by Sigmar Roßmann         ***"));
-  Serial.println(F("***                           ***"));
-  Serial.println(F("*** 12.11.2025                ***"));
-  Serial.println(F("*********************************"));
+  Serial.println("------------------------------------------------------------------------------------------");
+  Serial.println(F(" MFA-Computer 8085 Control "));
+  Serial.println(F(" by Sigmar Roßmann         "));
+  Serial.println(F("                           "));
+  Serial.println(F(" 12.11.2025                "));
+  Serial.println("------------------------------------------------------------------------------------------");
   Serial.println("");
   
   cmdMount();

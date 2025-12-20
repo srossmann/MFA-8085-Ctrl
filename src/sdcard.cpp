@@ -8,6 +8,13 @@ String chkFile = "";
 bool isReadySD = false;
 
  
+uint8_t intelHexChecksum(uint8_t *data, uint8_t len) {
+  uint16_t sum = 0;
+  for (uint8_t i = 0; i < len; i++) {
+    sum += data[i];
+  }
+  return (uint8_t)(~sum + 1);
+}
 
 bool chkFileExistence()
 {
